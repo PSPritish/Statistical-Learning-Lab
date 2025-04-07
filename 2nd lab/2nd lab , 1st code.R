@@ -1,0 +1,23 @@
+mtcars
+head(mtcars,10)
+library(ISLR2)
+head(Credit)
+names(mtcars)
+?mtcars
+str(mtcars)
+unique(mtcars$cyl)
+ncol(mtcars)
+boxplot(mpg~cyl, data = mtcars)
+plot(mtcars$mpg,mtcars$hp)
+pairs(mtcars)
+m1 <- lm(mpg ~ disp + hp + drat + wt + qsec,data = mtcars)
+summary(m1)
+aov(m1)
+anova(m1)
+resi <-  residuals(m1)
+resi
+shape(mtcars)
+qqnorm(resi)
+par(mfrow = c(2,2))
+plot(m1)
+confint(m1)

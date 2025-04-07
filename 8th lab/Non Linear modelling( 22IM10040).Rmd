@@ -1,0 +1,144 @@
+---
+title: "Non Linear modelling (22IM10040)"
+author: "Sunny Kumar"
+date: "2025-03-19"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+df <- read.delim("D:/Sem study materials/study materials 6th sem/Study materials by me/Statistical Learning Lab/8th lab/STAT501_Lesson01/STAT501_Lesson01/poverty.txt", header = TRUE, sep = "", strip.white = TRUE)
+
+```
+
+```{r}
+head(df)
+
+```
+```{r}
+plot(df)
+
+```
+```{r}
+library(ggplot2)
+library(reshape2)
+
+# Reshape data for ggplot
+df_melt <- melt(df, id.vars = "Location")  # Assuming 'Product_id' is categorical
+
+# Create boxplots
+ggplot(df_melt, aes(x = variable, y = value)) + 
+  geom_boxplot(fill = "skyblue") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Boxplots of Variables", x = "Variables", y = "Values")
+
+
+```
+
+```{r}
+colSums(is.na(df))  # Shows the count of missing values in each column
+
+
+```
+```{r}
+unique(df$Location)  
+dim(df) 
+
+```
+# Since we can see that there are 51 different location , so it will not impact the model so we will drop this column
+```{r}
+# Drop the 'Location' column
+df <- df[, !names(df) %in% "Location"]
+```
+
+```{r}
+linmodel <- lm(PovPct~. , data = df) # Fitting a linear model
+summary(linmodel)
+```
+
+```{r}
+# Load necessary library
+library(ggplot2)
+
+# Fit polynomial regression models for different degrees
+fit1 <- lm(PovPct ~ poly(Brth15to17, 1, raw = TRUE), data = df)  # Linear
+fit2 <- lm(PovPct ~ poly(Brth15to17, 2, raw = TRUE), data = df)  # Quadratic
+fit3 <- lm(PovPct ~ poly(Brth15to17, 3, raw = TRUE), data = df)  # Cubic
+fit4 <- lm(PovPct ~ poly(Brth15to17, 4, raw = TRUE), data = df)  # Quartic
+anova(fit1, fit2, fit3, fit4)
+
+
+```
+
+```{r}
+# Fit polynomial regression models for different degrees
+fit1 <- lm(PovPct ~ poly(TeenBrth, 1, raw = TRUE), data = df)  # Linear
+fit2 <- lm(PovPct ~ poly(TeenBrth, 2, raw = TRUE), data = df)  # Quadratic
+fit3 <- lm(PovPct ~ poly(TeenBrth, 3, raw = TRUE), data = df)  # Cubic
+fit4 <- lm(PovPct ~ poly(TeenBrth, 4, raw = TRUE), data = df)  # Quartic
+anova(fit1, fit2, fit3, fit4)
+
+
+```
+
+```{r}
+AIC(fit1, fit2, fit3, fit4)  # Lower AIC is better
+
+summary(fit1)$adj.r.squared
+summary(fit2)$adj.r.squared
+summary(fit3)$adj.r.squared
+summary(fit4)$adj.r.squared
+
+
+```
+```{r}
+ggplot(df, aes(x = TeenBrth, y = PovPct)) +
+  geom_point() +
+  stat_smooth(method = "lm", formula = y ~ poly(x, 3, raw = TRUE), color = "red") +
+  labs(title = "Polynomial Regression Fit", x = "TeenBrth", y = "PovPct")
+
+```
+```{r}
+library(splines)   # For spline regression
+library(mgcv)      # For Generalized Additive Model (GAM)
+library(ggplot2)   # For visualization
+
+# Fit a spline model with 3 knots
+fit_spline_3 <- lm(PovPct ~ bs(TeenBrth, knots = c(10, 20, 30)), data = df)
+
+# Fit a spline model with 5 knots
+fit_spline_5 <- lm(PovPct ~ bs(TeenBrth, knots = c(10, 15, 20, 25, 30)), data = df)
+
+# Compare models
+anova(fit_spline_3, fit_spline_5)
+
+```
+```{r}
+# Fit a GAM model using smoothing splines
+gam_fit <- gam(PovPct ~ s(Brth15to17) + s(Brth18to19) + s(ViolCrime) + s(TeenBrth), data = df)
+
+# Summary of the model
+summary(gam_fit)
+
+# Visualize the effect of each predictor
+plot(gam_fit, pages = 1, se = TRUE)
+
+
+```
+```{r}
+ggplot(df, aes(x = Brth15to17, y = PovPct)) +
+  geom_point() +
+  geom_smooth(method = "gam", formula = y ~ s(x), color = "blue") +
+  labs(title = "GAM Fit for PovPct", x = "Brth15to17", y = "PovPct")
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,118 @@
+---
+title: "Assignment 5 sol"
+author: "Sunny Kumar"
+date: "2025-03-03"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Cellphone <- read.csv("D:\\Sem study materials\\study materials 6th sem\\Study materials by me\\Statistical Learning Lab\\6th lab\\Phone-price\\Cellphone.csv")
+head(Cellphone)
+```
+
+```{r}
+df <- Cellphone
+head(df)
+```
+```{r}
+plot(df)
+```
+```{r}
+summary(df)
+
+```
+```{r}
+library(ggplot2)
+library(corrplot)
+cor_matrix <- cor(df[, sapply(df, is.numeric)], use = "complete.obs")# Correlation matrix
+cor_matrix
+
+```
+# From the output we can see that,Columns like  PPI , CPU core , Cpu.freq, internal.mem, ram, RearCam,Front_Cam, thickness have high correleation with the Price
+```{r}
+corrplot(cor_matrix, method = "color", type = "upper", tl.cex = 0.8)
+```
+```{r}
+ggplot(df, aes(x = as.factor(cpu.core), y = Price)) + 
+  geom_boxplot(fill = "lightblue") + 
+  labs(title = "CPU Cores vs Price", x = "CPU Cores", y = "Price")
+```
+```{r}
+ggplot(df, aes(x = as.factor(RearCam), y = Price)) + 
+  geom_boxplot(fill = "lightgreen") + 
+  labs(title = "Rear Camera vs Price", x = "Rear Camera", y = "Price")
+```
+```{r}
+# Performing Best Subset selection 
+library(leaps)
+df <- df[, !names(df) %in% "Product_id"]
+best_model <- regsubsets(Price ~ ., data = df, nvmax =  12) # Total 13 cols , taking all cols
+summary(best_model)
+```
+# From the Above output we can say that if we only consider one column then best column is "ram" and if we have to select two best columns then we will take "ram" and "thickness". Similarly , it goes and according to our best no. of variables to select ,we can select using this model summary.
+
+```{r}
+which.min(summary(best_model)$cp) # The model which contains the lowest cp variables
+coef(best_model, which.min(summary(best_model)$cp)) # The 10 selected variables  coefficients
+
+```
+# These above are coefficients of 10 best selected columns
+```{r}
+plot(summary(best_model)$cp, type = "b", main = "Cp Plot", xlab = "Number of Predictors", ylab = "Cp")
+points(10, summary(best_model)$cp[10], pch = 14 , col = "red")
+```
+```{r}
+summary(best_model)$cp[10]
+```
+# So, the value of Cp at number of predictors = 10 is 11.10326. So, we can clearly see that for no of predictors = 10 we get the lowest Cp 
+```{r}
+plot(best_model, scale = "Cp")
+```
+# So this graph show that when we include very few variables like ram then we are getting Cp of 470 and as we are including more variables like 10 important variables which is shown in the black on the top rows then we are getting the minimum Cp of 11 and even it will reduce when we will increase more no of variables and that can be case of overfitting.
+```{r}
+library(pls)
+pcr_5 <- pcr(Price ~ ., data = df, scale = TRUE, validation = "CV", ncomp = 5)
+pcr_7 <- pcr(Price ~ ., data = df, scale = TRUE, validation = "CV", ncomp = 7)
+
+# Check variance explained by the first 5 and 7 components
+explained_variance_5 <- summary(pcr_5)$explvar
+```
+# So, here with 5 components total variance that is explained is 94.50% which is not greater than 95% but good enough because more than 90% variance is explained by only 5 Principal components
+```{r}
+explained_variance_7 <- summary(pcr_7)$explvar
+```
+# So, here with 7 components total variance that is explained is 95.01% which is greater than 95% .So, Good enough because more than 95% variance is explained by only 7 Principal components
+```{r}
+library(glmnet)
+X <- as.matrix(df[, !names(df) %in% "Price"])  # Predictors
+y <- df$Price  # Response variable
+# Fit Lasso model with cross-validation to find best lambda
+set.seed(3)  # Ensure reproducibility
+cv_lasso <- cv.glmnet(X, y, alpha = 1, standardize = TRUE, nfolds = 10)
+plot(cv_lasso)
+```
+```{r}
+# Best lambda value
+best_lambda <- cv_lasso$lambda.min
+best_lambda
+```
+# Since we are getting high value of lambda , so we can say that stronger regularization, shrinking more coefficients to zero 
+```{r}
+lasso_model <- glmnet(X, y, alpha = 1, lambda = best_lambda, standardize = TRUE)
+lasso_coef <- coef(lasso_model)
+lasso_coef[lasso_coef != 0]
+```
+# So We can clearly see from above that , there are some variables whose coefficients are very close to zero which means they are irrelevant columns . Like that 2nd coefficient etc.
+```{r}
+
+```
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+

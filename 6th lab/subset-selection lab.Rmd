@@ -1,0 +1,71 @@
+---
+title: "Subset selection and dimension reduction"
+author: "Sunny Kumar"
+date: "2025-02-11"
+output: html_document
+---
+## Statistical Learning Lab
+**Best Subset selection method**
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ISLR)
+library(leaps)
+head(Hitters)
+hit<- Hitters
+dim(hit)
+hit = na.omit(hit)
+regfit.3 <- regsubsets(Salary~.,data = hit ,nvmax = 3) # out of 19 variables , will take only 3 variables
+summary(regfit.3)
+
+```
+Let us try a few more variables with best subset selection
+```{r}
+regfit <- regsubsets(Salary~.,data = hit ) # out of 19 variables , will take only 8 var automatically
+summary(regfit)
+regfit.full <- regsubsets(Salary~.,data = hit ,nvmax = 19) # out of 19 variables , will take only 19 variables
+reg.sum <- summary(regfit.full)
+names(reg.sum)
+which.min(reg.sum$cp) # The model which contains the lowest cp variables
+coef(regfit.full, 10) # Jab 10 variables chuna tha to uske coefficients
+
+
+```
+## Plots for Subset selection
+```{r}
+plot(reg.sum$cp, xlab = "Number of variables included" , ylab = "cp")
+points(10, reg.sum$cp[10], pch = 20 , col = "red")
+```
+Let us use the plot function of the leaps library
+```{r}
+plot(regfit.full, scale = "Cp")
+```
+Forward selection method 
+```{r}
+regfit.fwd <-regsubsets(Salary~.,data = hit , nvmax = 19 , method ="forward")
+summary(regfit.fwd)
+plot(regfit.fwd)
+regsum.fwd <- summary(regfit.fwd)
+which.min(regsum.fwd$bic)
+coef(regfit.fwd,6)
+
+```
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,128 @@
+---
+title: "Tree Based methods (22IM10040 , Sunny)"
+author: "Sunny Kumar"
+date: "2025-03-19"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+df <- read.csv("D:\\Sem study materials\\study materials 6th sem\\Study materials by me\\Statistical Learning Lab\\8th lab\\drug200.csv")
+```
+
+```{r}
+dim(df)
+head(df)
+```
+```{r}
+plot(df)
+```
+```{r}
+colSums(is.na(df))
+```
+```{r}
+unique(df$Drug) 
+```
+# From observing the dataset we can say that using the other data we have to predict the type/class of drug
+```{r}
+library(rpart)       # For decision tree
+library(rpart.plot)  # For visualizing the tree
+
+df$Sex <- as.factor(df$Sex)
+df$BP <- as.factor(df$BP)
+df$Cholesterol <- as.factor(df$Cholesterol)
+df$Drug <- as.factor(df$Drug)
+
+set.seed(123)  # For reproducibility
+train_index <- sample(1:nrow(df), 0.8 * nrow(df))  # 80% train, 20% test
+df_train <- df[train_index, ]
+df_test <- df[-train_index, ]
+
+tree_model <- rpart(Drug ~ ., data = df_train, method = "class")
+
+```
+```{r}
+rpart.plot(tree_model, type = 2, extra = 104, cex = 0.8, main = "Decision Tree for Drug Classification")
+
+```
+```{r}
+printcp(tree_model)  # Displays CP values and tree performance
+best_cp <- tree_model$cptable[which.min(tree_model$cptable[,"xerror"]), "CP"]
+cat("Optimal CP:", best_cp, "\n")
+pruned_tree <- prune(tree_model, cp = best_cp)
+library(rpart.plot)
+rpart.plot(pruned_tree, type = 2, extra = 104, cex = 0.8, main = "Pruned Decision Tree")
+
+```
+```{r}
+pruned_predictions <- predict(pruned_tree, df_test, type = "class")
+pruned_conf_matrix <- table(Predicted = pruned_predictions, Actual = df_test$Drug)
+
+# Print confusion matrix & accuracy
+print(pruned_conf_matrix)
+pruned_accuracy <- sum(diag(pruned_conf_matrix)) / sum(pruned_conf_matrix)
+cat("Pruned Tree Accuracy:", pruned_accuracy, "\n")
+
+```
+```{r}
+library(randomForest)
+set.seed(123)
+bagging_model <- randomForest(Drug ~ ., data = df_train, mtry = ncol(df_train) - 1, ntree = 500, importance = TRUE)
+bagging_pred <- predict(bagging_model, df_test)
+bagging_acc <- mean(bagging_pred == df_test$Drug)
+cat("Bagging Model Accuracy:", bagging_acc, "\n")
+
+```
+```{r}
+set.seed(123)
+rf_model <- randomForest(Drug ~ ., data = df_train, mtry = sqrt(ncol(df_train) - 1), ntree = 500, importance = TRUE)
+rf_pred <- predict(rf_model, df_test)
+rf_acc <- mean(rf_pred == df_test$Drug)
+cat("Random Forest Accuracy:", rf_acc, "\n")
+
+```
+```{r}
+set.seed(123)
+rf_mtry3 <- randomForest(Drug ~ ., data = df_train, mtry = 3, ntree = 500)
+rf_mtry5 <- randomForest(Drug ~ ., data = df_train, mtry = 5, ntree = 500)
+
+acc_mtry3 <- mean(predict(rf_mtry3, df_test) == df_test$Drug)
+acc_mtry5 <- mean(predict(rf_mtry5, df_test) == df_test$Drug)
+
+cat("Accuracy (mtry = 3):", acc_mtry3, "\n")
+cat("Accuracy (mtry = 5):", acc_mtry5, "\n")
+
+```
+```{r}
+library(caret)
+set.seed(123)
+tune_grid <- expand.grid(mtry = c(2, 3, 4, 5, 6))  
+
+control <- trainControl(method = "cv", number = 5)  
+
+rf_tuned <- train(Drug ~ ., data = df_train, method = "rf", tuneGrid = tune_grid, trControl = control)
+
+print(rf_tuned)
+best_mtry <- rf_tuned$bestTune$mtry
+
+cat("Best mtry:", best_mtry, "\n")
+
+# Train the final best model
+final_rf <- randomForest(Drug ~ ., data = df_train, mtry = best_mtry, ntree = 500)
+final_pred <- predict(final_rf, df_test)
+
+# Calculate Accuracy
+final_acc <- mean(final_pred == df_test$Drug)
+cat("Final Tuned Random Forest Accuracy:", final_acc, "\n")
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
