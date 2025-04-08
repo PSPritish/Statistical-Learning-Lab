@@ -31,15 +31,6 @@ summary(impute_object)
 duplicated(airquality)
 mean(airquality$Temp)
 
-
-
-
-
-
-
-
-
-
 # Visualise the data 
 install.packages("ggplot2")
 library(ggplot2)
